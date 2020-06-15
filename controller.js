@@ -132,7 +132,8 @@ class CommonController {
 class TodoController extends CommonController {
     constructor() {
         super();
-        this.url = "http://www.todo.com:1010/php/todo.php";
+        this._url = "http://www.todo.com:1010/php/todo.php";
+
         this.add();
         this.displayTodos();
         this.completed();
@@ -140,6 +141,11 @@ class TodoController extends CommonController {
         this.todoOption();
 
     }
+
+    /**
+     * @access url
+     */
+    get url() { return this._url }
 
     /**
      * @method todoOption
@@ -206,9 +212,14 @@ class TodoController extends CommonController {
             }
 
             todoBody.innerHTML = "";
+            let counter = 0;
             for (const todo of todos.data) {
                 // ------------------------ Check Date ------------
                 if (todo.date != todoDate.textContent) {
+                    counter++;
+                    if (counter == todos.data.length) {
+                        todoBody.innerHTML = `<div class="alert alert-info todo-content">No Todo Yet!</div>`;
+                    }
                     continue;
                 }
 
@@ -438,13 +449,8 @@ class TaskController extends CommonController {
     constructor() {
         super();
         const self = this;
-        const url = "http://www.todo.com:1010/php/task.php";
+        this._url = "http://www.todo.com:1010/php/task.php";
 
-        Object.defineProperty(this, 'url', {
-            get() {
-                return url;
-            }
-        });
         this.add();
         this.displayTasks();
         this.taskOption();
@@ -453,6 +459,11 @@ class TaskController extends CommonController {
         this.search();
 
     }
+
+    /**
+     * @access url
+     */
+    get url() { return this._url }
 
     /**
      * @method taskOption
@@ -499,7 +510,7 @@ class TaskController extends CommonController {
                 const dates = document.querySelector(
                     "#add-task .task-todos input[type=date]"
                 ).value;
-                console.log(title, tag, s_date, e_date, todos, dates);
+
                 if (!title || !tag || !s_date || !e_date || !todos || !dates) {
                     return;
                 }
@@ -523,13 +534,6 @@ class TaskController extends CommonController {
     displayTasks() {
         const self = this;
         const taskBody = document.querySelector(".task .todo .todo-body");
-        const task_icon = `<svg xmlns="http://www.w3.org/2000/svg" width="17" height="14.001" viewBox="0 0 17 14.001"><path id="task" d="M17,14H5V10H17v4ZM4,14H0V10H4v4ZM17,9H5V5H17V9ZM4,9H0V5H4V9ZM4,4H0V0H4V4ZM17,4H5V0H17V4Z" fill="#333"></path></svg>`;
-
-        const date_icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="20" viewBox="0 0 18 20"><path id="calender" d="M16,20H2a2,2,0,0,1-2-2L.01,4A2,2,0,0,1,2,2H3V0H5V2h8V0h2V2h1a2,2,0,0,1,2,2V18A2,2,0,0,1,16,20ZM2,7V18H16V7Zm7,7H4V9H9v5Z" fill="#333"></path></svg>`;
-
-        const edit_icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18.001" height="18.002" viewBox="0 0 18.001 18.002"><path id="pencil" d="M3.75,18h0L0,18v-3.75L11.06,3.192l3.75,3.75ZM15.88,5.872h0L12.13,2.122,13.96.292a1,1,0,0,1,1.41,0l2.34,2.34a1,1,0,0,1,0,1.41L15.88,5.872Z" transform="translate(0 0)" fill="#333"></path></svg>`;
-
-        const delete_icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="18" viewBox="0 0 14 18"><path id="trush" d="M11,18H3a2,2,0,0,1-2-2V4H13V16A2,2,0,0,1,11,18ZM14,3H0V1H3.5l1-1h5l1,1H14V3Z" transform="translate(0 0)" fill="#333"></path></svg>`;
 
         this.getTodos((tasks) => {
             // Check if tasks not empty
@@ -538,62 +542,87 @@ class TaskController extends CommonController {
                 throw new Error("Tasks is Empty!");
             }
             taskBody.innerHTML = "";
+            let counter = 0;
             for (const task of tasks.data) {
                 // ------------------------ Check Date ------------
                 if (
                     !self.compare(task, taskDate.textContent)
                 ) {
+                    counter++;
+                    if (counter == tasks.data.length) {
+                        taskBody.innerHTML = `<div class="alert alert-info todo-content">No Task Yet!</div>`;
+                    }
                     continue;
                 }
-                // ------------- check if task exists --------------
-                let action = `
-                    <div class="row justify-content-end align-items-center">
-                        <span class="edit" data-id="${task.id}">
-                            <div class="overlay"></div>
-                            ${edit_icon}
-                        </span>
-                        <span class="delete delete-task" data-id="${task.id}">
-                            <div class="overlay"></div>
-                            ${delete_icon}
-                        </span>
-                    </div>`;
-                const task_category = `
-                    <div class="category">
-                        <span class="row justify-content-start align-items-center">
-                            ${task_icon} ${task.tag}
-                        </span>
-                    </div>`;
 
-                // ------------- add todos as view page --------------
-                taskBody.innerHTML += `<div class="todo-content ${
-                    task.status == 0 ? "" : "line-through"
-                    }">
-                <div class="progress-area" data-id="${task.id}"><span class="line"></span></div>
-                <article>
-                    <h2 class="title">${task.title}</h2>
-                    <div class="info row justify-content-start align-items-center">
-                        ${task_category}
-                    <div class="todo-date">
-                        <span class="row justify-content-start align-items-center">
-                            ${date_icon} ${task.date_start} - ${task.date_end}
-                        </span>
-                    </div>
-                    </div>
-                </article>
-                <div class="action ${
-                    task.status == 0 ? "" : "hide"
-                    }">${action}</div>
-                <div class="completed-action ${
-                    task.status == 0 ? "" : "w-100 secondary-bg"
-                    }" data-id="${task.id}"></div>
-            </div>
-        `;
+                self.html(task, taskBody);
+
             }
             todoController.progressBar();
         });
 
         // -------------- Update ProgressBar after make action ------------
         // this.progressBar();
+    }
+
+    /**
+     * @method html
+     * @param {task} task data
+     * @param {taskBody} taskBody DOM element
+     */
+    html(task, taskBody) {
+        const task_icon = `<svg xmlns="http://www.w3.org/2000/svg" width="17" height="14.001" viewBox="0 0 17 14.001"><path id="task" d="M17,14H5V10H17v4ZM4,14H0V10H4v4ZM17,9H5V5H17V9ZM4,9H0V5H4V9ZM4,4H0V0H4V4ZM17,4H5V0H17V4Z" fill="#333"></path></svg>`;
+
+        const date_icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="20" viewBox="0 0 18 20"><path id="calender" d="M16,20H2a2,2,0,0,1-2-2L.01,4A2,2,0,0,1,2,2H3V0H5V2h8V0h2V2h1a2,2,0,0,1,2,2V18A2,2,0,0,1,16,20ZM2,7V18H16V7Zm7,7H4V9H9v5Z" fill="#333"></path></svg>`;
+
+        const edit_icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18.001" height="18.002" viewBox="0 0 18.001 18.002"><path id="pencil" d="M3.75,18h0L0,18v-3.75L11.06,3.192l3.75,3.75ZM15.88,5.872h0L12.13,2.122,13.96.292a1,1,0,0,1,1.41,0l2.34,2.34a1,1,0,0,1,0,1.41L15.88,5.872Z" transform="translate(0 0)" fill="#333"></path></svg>`;
+
+        const delete_icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="18" viewBox="0 0 14 18"><path id="trush" d="M11,18H3a2,2,0,0,1-2-2V4H13V16A2,2,0,0,1,11,18ZM14,3H0V1H3.5l1-1h5l1,1H14V3Z" transform="translate(0 0)" fill="#333"></path></svg>`;
+
+        // ------------- check if task exists --------------
+        let action = `
+        <div class="row justify-content-end align-items-center">
+            <span class="edit" data-id="${task.id}">
+                <div class="overlay"></div>
+                ${edit_icon}
+            </span>
+            <span class="delete delete-task" data-id="${task.id}">
+                <div class="overlay"></div>
+                ${delete_icon}
+            </span>
+        </div>`;
+        const task_category = `
+        <div class="category">
+            <span class="row justify-content-start align-items-center">
+                ${task_icon} ${task.tag}
+            </span>
+        </div>`;
+
+        // ------------- add todos as view page --------------
+        taskBody.innerHTML += `<div class="todo-content ${
+            task.status == 0 ? "" : "line-through"
+            }">
+    <div class="progress-area" data-id="${task.id}"><span class="line"></span></div>
+    <article>
+        <h2 class="title">${task.title}</h2>
+        <div class="info row justify-content-start align-items-center">
+            ${task_category}
+        <div class="todo-date">
+            <span class="row justify-content-start align-items-center">
+                ${date_icon} ${task.date_start} - ${task.date_end}
+            </span>
+        </div>
+        </div>
+    </article>
+    <div class="action ${
+            task.status == 0 ? "" : "hide"
+            }">${action}</div>
+    <div class="completed-action ${
+            task.status == 0 ? "" : "w-100 secondary-bg"
+            }" data-id="${task.id}"></div>
+</div>
+`;
+
     }
 
     /**
@@ -719,21 +748,31 @@ class TaskController extends CommonController {
                 const val = this.value;
                 const type = select.value;
                 const pattern = new RegExp(val, 'gi');
+                if (!val) {
+                    self.displayTasks();
+                }
                 switch (type) {
                     case "title":
+                        const title_result = tasks.filter(task => pattern.test(task.title));
+                        if (!title_result.length) {
+                            taskBody.innerHTML = `<div class="alert alert-info todo-content">task doesn't exists!</div>`;
+                            throw new Error("Tasks not found!");
 
+                        } else {
+                            taskBody.innerHTML = "";
+                            title_result.forEach(task => self.html(task, taskBody));
+                        }
                         break;
                     case "tag":
-                        const result = tasks.filter(task => pattern.test(task.tag));
-                        if (result.length) {
-                            taskBody.innerHTM = '';
-                            console.log(result);
+                        const tag_result = tasks.filter(task => pattern.test(task.tag));
+                        if (!tag_result.length) {
+                            taskBody.innerHTML = `<div class="alert alert-info todo-content">task doesn't exists!</div>`;
+                            throw new Error("Tasks not found!");
 
-                            // self.html(result)
                         } else {
-                            // self.displayTasks()
+                            taskBody.innerHTML = "";
+                            tag_result.forEach(task => self.html(task, taskBody));
                         }
-
                         break;
                 }
 
@@ -742,60 +781,6 @@ class TaskController extends CommonController {
             }, false);
 
         });
-    }
-
-    html(tasks) {
-        const taskBody = document.querySelector(".task .todo .todo-body");
-        const task_icon = `<svg xmlns="http://www.w3.org/2000/svg" width="17" height="14.001" viewBox="0 0 17 14.001"><path id="task" d="M17,14H5V10H17v4ZM4,14H0V10H4v4ZM17,9H5V5H17V9ZM4,9H0V5H4V9ZM4,4H0V0H4V4ZM17,4H5V0H17V4Z" fill="#333"></path></svg>`;
-
-        const date_icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="20" viewBox="0 0 18 20"><path id="calender" d="M16,20H2a2,2,0,0,1-2-2L.01,4A2,2,0,0,1,2,2H3V0H5V2h8V0h2V2h1a2,2,0,0,1,2,2V18A2,2,0,0,1,16,20ZM2,7V18H16V7Zm7,7H4V9H9v5Z" fill="#333"></path></svg>`;
-
-        const edit_icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18.001" height="18.002" viewBox="0 0 18.001 18.002"><path id="pencil" d="M3.75,18h0L0,18v-3.75L11.06,3.192l3.75,3.75ZM15.88,5.872h0L12.13,2.122,13.96.292a1,1,0,0,1,1.41,0l2.34,2.34a1,1,0,0,1,0,1.41L15.88,5.872Z" transform="translate(0 0)" fill="#333"></path></svg>`;
-
-        const delete_icon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="18" viewBox="0 0 14 18"><path id="trush" d="M11,18H3a2,2,0,0,1-2-2V4H13V16A2,2,0,0,1,11,18ZM14,3H0V1H3.5l1-1h5l1,1H14V3Z" transform="translate(0 0)" fill="#333"></path></svg>`;
-        for (const task of tasks) {
-            let action = `
-            <div class="row justify-content-end align-items-center">
-                <span class="edit" data-id="${task.id}">
-                    <div class="overlay"></div>
-                    ${edit_icon}
-                </span>
-                <span class="delete delete-task" data-id="${task.id}">
-                    <div class="overlay"></div>
-                    ${delete_icon}
-                </span>
-            </div>`;
-            const task_category = `
-            <div class="category">
-                <span class="row justify-content-start align-items-center">
-                    ${task_icon} ${task.tag}
-                </span>
-            </div>`;
-            // ------------- add todos as view page --------------
-            taskBody.innerHTML += `<div class="todo-content ${
-                task.status == 0 ? "" : "line-through"
-                }">
-            <div class="progress-area" data-id="${task.id}"><span class="line"></span></div>
-            <article>
-                <h2 class="title">${task.title}</h2>
-                <div class="info row justify-content-start align-items-center">
-                    ${task_category}
-                <div class="todo-date">
-                    <span class="row justify-content-start align-items-center">
-                        ${date_icon} ${task.date_start} - ${task.date_end}
-                    </span>
-                </div>
-                </div>
-            </article>
-            <div class="action ${
-                task.status == 0 ? "" : "hide"
-                }">${action}</div>
-                                    <div class="completed-action ${
-                task.status == 0 ? "" : "w-100 secondary-bg"
-                }" data-id="${task.id}"></div>
-        </div>`;
-        }
-
     }
 
     /**
